@@ -11,6 +11,11 @@ class Sensor(models.Model):
     description = models.TextField(blank=True, null=True)
     model = models.CharField(max_length=100)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["owner", "name"], name="uniq_owner_name")
+        ]
+
     def __str__(self):
         return f"{self.name} ({self.model})"
 
