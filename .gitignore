@@ -1,0 +1,51 @@
+# --- Python / Django ---
+__pycache__/
+*.py[cod]
+*.sqlite3
+db.sqlite3
+*.log
+
+# Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Django stuff
+media/
+staticfiles/
+*.pot
+*.py,cover
+*.mo
+
+# --- Pytest / Coverage ---
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# --- Node / Angular ---
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.env
+
+# --- Docker ---
+*.pid
+*.seed
+*.db
+.env
+.env.local
+.env.*.local
+
+# --- Misc ---
+*.bak
+*.tmp
+*.orig
