@@ -1,14 +1,15 @@
-from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
+from typing import Optional
 
-# --- User ---
+# --- Auth ---
 class RegisterIn(BaseModel):
     email: str
     username: str
     password: str
 
 class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     email: str
     username: str
@@ -20,6 +21,7 @@ class SensorIn(BaseModel):
     description: Optional[str] = None
 
 class SensorOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     name: str
     model: str
@@ -32,6 +34,7 @@ class ReadingIn(BaseModel):
     timestamp: datetime
 
 class ReadingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     temperature: float
     humidity: float
