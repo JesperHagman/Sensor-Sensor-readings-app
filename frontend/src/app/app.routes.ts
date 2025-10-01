@@ -1,25 +1,29 @@
 // src/app/app.routes.ts
 import { Routes } from '@angular/router';
-import { AuthGuard } from './core/auth.guard';
+import { authGuard } from './core/auth.guard';
 
-// OBS: uppdaterade sökvägar till pages/
 import { LoginComponent } from './pages/login/login.component';
+import { RegisterComponent } from './pages/register/register.component';
 import { SensorsListComponent } from './pages/sensors-list/sensors-list.component';
 import { SensorDetailComponent } from './pages/sensor-detail/sensor-detail.component';
 
 export const routes: Routes = [
+  // Publika
   { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
 
+  // Skyddat område
   {
-    path: '',
-    canActivate: [AuthGuard],
-    runGuardsAndResolvers: 'always',
+    path: 'sensors',
+    canActivate: [authGuard],
     children: [
-      { path: '', redirectTo: 'sensors', pathMatch: 'full' },
-      { path: 'sensors', component: SensorsListComponent },
-      { path: 'sensors/:id', component: SensorDetailComponent },
+      { path: '', component: SensorsListComponent },
+      { path: ':id', component: SensorDetailComponent },
     ],
   },
+
+  // Default: pekar mot skyddat område => om ej inloggad hamnar man på /login
+  { path: '', redirectTo: 'sensors', pathMatch: 'full' },
 
   { path: '**', redirectTo: '' },
 ];

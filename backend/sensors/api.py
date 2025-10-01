@@ -1,3 +1,4 @@
+# sensors/api.py
 from typing import List, Optional, Any, Dict
 from django.contrib.auth.models import User
 from django.db.models import Q
@@ -5,11 +6,13 @@ from django.db import IntegrityError
 from django.utils.dateparse import parse_datetime
 
 from ninja import NinjaAPI, Router
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .schemas import (
     RegisterIn, UserOut,
     SensorIn, SensorOut,
-    ReadingIn, ReadingOut
+    ReadingIn, ReadingOut,
+    RegisterOut,
 )
 from .models import Sensor, Reading
 from .auth import JWTAuth
@@ -51,14 +54,26 @@ def _serialize_list(items, Schema) -> list[Dict[str, Any]]:
 
 auth_router = Router()
 
-@auth_router.post("/register/", response={201: UserOut})
+@auth_router.post("/register/", response={201: RegisterOut, 400: dict})
 def register(request, payload: RegisterIn):
-    user = User.objects.create_user(
-        username=payload.username,
-        email=payload.email,
-        password=payload.password
-    )
-    return 201, UserOut(id=user.id, email=user.email, username=user.username)
+    try:
+        user = User.objects.create_user(
+            username=payload.username,
+            email=payload.email,
+            password=payload.password
+        )
+    except IntegrityError:
+        return 400, {"detail": "Username or email already in use"}
+
+    # Skapa JWT direkt vid registrering
+    refresh = RefreshToken.for_user(user)
+    access = str(refresh.access_token)
+
+    return 201, {
+        "access": access,
+        "refresh": str(refresh),
+        "user": UserOut(id=user.id, email=user.email, username=user.username).model_dump(),
+    }
 
 
 # ------------------------

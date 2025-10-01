@@ -7,15 +7,23 @@ import { throwError } from 'rxjs';
 
 export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
-  const token = localStorage.getItem('access_token');
 
-  if (token) {
-    req = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
+  // Do NOT attach token (and do NOT auto-redirect on 401) for auth endpoints
+  // Adjust the prefix if your API base changes.
+  const isAuthEndpoint =
+    req.url.startsWith('/api/auth/') || req.url.includes('/auth/token');
+
+  if (!isAuthEndpoint) {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      req = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
+    }
   }
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 || error.status === 403) {
+      // Only kick to /login for protected endpoints
+      if (!isAuthEndpoint && (error.status === 401 || error.status === 403)) {
         localStorage.removeItem('access_token');
         router.navigate(['/login']);
       }

@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { JwtPair, Paginated, Sensor, Reading } from './models';
+import { JwtPair, Paginated, Sensor, Reading, RegisterIn } from './models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -23,15 +23,23 @@ export class ApiService {
     return this.http.get<Sensor>(`/api/sensors/${id}/`);
   }
 
-  listReadings(
-    sensorId: number,
-    q: { page?: number; page_size?: number; start?: string; end?: string } = {}
-  ): Observable<Paginated<Reading>> {
-    let params = new HttpParams();
-    if (q.page) params = params.set('page', q.page);
-    if (q.page_size) params = params.set('page_size', q.page_size);
-    if (q.start) params = params.set('start', q.start);
-    if (q.end) params = params.set('end', q.end);
-    return this.http.get<Paginated<Reading>>(`/api/sensors/${sensorId}/readings/`, { params });
+listReadings(
+  sensorId: number,
+  q: { page?: number; page_size?: number; start?: string; end?: string } = {}
+) {
+  let params = new HttpParams();
+  if (q.page) params = params.set('page', q.page);
+  if (q.page_size) params = params.set('page_size', q.page_size);
+  if (q.start) params = params.set('timestamp_from', q.start);
+  if (q.end) params = params.set('timestamp_to', q.end);
+  return this.http.get<Paginated<Reading>>(
+    `/api/sensors/${sensorId}/readings/`,
+    { params }
+  );
+}
+
+    register(body: RegisterIn) {
+    return this.http.post('/api/auth/register/', body);
   }
+
 }

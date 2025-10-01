@@ -106,9 +106,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- CORS / CSRF (tillåt Angular på :3000) ---
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200",
     "http://localhost:3000",
 ]
 CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:4200",
     "http://localhost:3000",
 ]
 

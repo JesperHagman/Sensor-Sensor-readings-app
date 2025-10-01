@@ -1,0 +1,17 @@
+<nav class="navbar">
+  <a routerLink="/" class="brand" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+    Sensor Dashboard
+  </a>
+
+  <ul class="links" *ngIf="auth.isAuthenticated(); else loggedOut">
+    <li><a routerLink="/sensors" routerLinkActive="active">Sensors</a></li>
+    <li><button type="button" (click)="logout()">Logout</button></li>
+  </ul>
+
+  <ng-template #loggedOut>
+    <ul class="links">
+      <li><a routerLink="/login" routerLinkActive="active">Login</a></li>
+      <li><a routerLink="/register" routerLinkActive="active">Register</a></li>
+    </ul>
+  </ng-template>
+</nav>

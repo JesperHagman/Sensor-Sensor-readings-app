@@ -1,3 +1,4 @@
+# sensors/schemas.py
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import Optional
@@ -13,6 +14,15 @@ class UserOut(BaseModel):
     id: int
     email: str
     username: str
+
+class TokenPairOut(BaseModel):
+    access: str
+    refresh: str
+
+class RegisterOut(BaseModel):
+    access: str
+    refresh: str
+    user: UserOut
 
 # --- Sensor ---
 class SensorIn(BaseModel):

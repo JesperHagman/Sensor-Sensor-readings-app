@@ -29,3 +29,9 @@ export interface JwtPair {
   access: string;
   refresh: string;
 }
+
+export interface RegisterIn {
+  username: string; 
+  email: string; 
+  password: string;
+}

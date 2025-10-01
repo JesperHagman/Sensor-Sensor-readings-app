@@ -1,18 +1,19 @@
 // src/app/core/auth.guard.ts
-import { Injectable, inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { inject } from '@angular/core';
+import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { AuthService } from './auth.service';
 
-@Injectable({ providedIn: 'root' })
-export class AuthGuard {
-  private auth = inject(AuthService);
-  private router = inject(Router);
+export const authGuard: CanActivateFn = (route, state): boolean | UrlTree => {
+  const router = inject(Router);
+  const auth = inject(AuthService);
 
-  canActivate(): boolean {
-    if (this.auth.isAuthenticated()) return true;
-    this.router.navigateByUrl('/login');
-    return false;
-  }
-}
+  // Dessa routes är publika OM guarden nånsin skulle appliceras fel
+  const publicPaths = new Set(['login', 'register']);
+  const thisPath = route.routeConfig?.path ?? '';
+  if (publicPaths.has(thisPath)) return true;
 
-export const canActivate: CanActivateFn = () => inject(AuthGuard).canActivate();
+  if (auth.isAuthenticated()) return true;
+
+  // Skicka till login och spara var vi var på väg
+  return router.createUrlTree(['/login'], { queryParams: { redirect: state.url } });
+};
