@@ -249,9 +249,16 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
     }
     this.destroyChart();
 
-    const labels = this.readings.map(r => new Date(r.timestamp).toLocaleString());
+    // Prepare data
+    const dates = this.readings.map(r => new Date(r.timestamp));
+    const labels = dates.map(d => d.toLocaleDateString()); 
     const temp = this.readings.map(r => r.temperature);
     const hum = this.readings.map(r => r.humidity);
+
+    // Small helpers for tooltip formatting
+    const fmtTime = (d: Date) =>
+      d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const fmtDate = (d: Date) => d.toLocaleDateString();
 
     this.chart = new Chart(this.lineChartRef.nativeElement, {
       type: 'line',
@@ -269,11 +276,33 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
         scales: {
           y1: { type: 'linear', position: 'left' },
           y2: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } },
-          x: { ticks: { autoSkip: true, maxTicksLimit: 8 } },
+          x: {
+            // show only the date on the axis
+            ticks: {
+              autoSkip: true,
+              maxTicksLimit: 8,
+              callback: (value, index) => fmtDate(dates[index]),
+            },
+          },
         },
         plugins: {
           legend: { display: true },
-          tooltip: { enabled: true },
+          tooltip: {
+            enabled: true,
+            callbacks: {
+              // Title: Date + Time in tooltip
+              title: (items) => {
+                const i = items[0].dataIndex;
+                const d = dates[i];
+                return `${fmtDate(d)} ${fmtTime(d)}`;
+              },
+              // Label: dataset label + value
+              label: (ctx) => {
+                const v = ctx.parsed.y;
+                return `${ctx.dataset.label}: ${v}`;
+              },
+            },
+          },
         },
       },
     });
