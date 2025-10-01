@@ -1,0 +1,43 @@
+<div class="wrap" *ngIf="!loading && !error; else loadingOrError">
+  <a routerLink="/sensors" class="back-link">← Till sensorer</a>
+
+  <h1 class="title">{{ sensor?.name }}</h1>
+  <div class="meta">
+    <div><strong>Model:</strong> {{ sensor?.model }}</div>
+    <div *ngIf="sensor?.description"><strong>Beskrivning:</strong> {{ sensor?.description }}</div>
+  </div>
+
+  <div class="card chart-card">
+    <h2>Temperatur & Luftfuktighet</h2>
+    <div class="chart-box">
+      <canvas #lineChart></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Senaste mätningar (20)</h2>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Tid</th>
+            <th>Temp (°C)</th>
+            <th>RH (%)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of latest20">
+            <td>{{ r.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+            <td>{{ r.temperature | number:'1.2-2' }}</td>
+            <td>{{ r.humidity | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingOrError>
+  <div class="state" *ngIf="loading">Laddar…</div>
+  <div class="state error" *ngIf="!loading && error">{{ error }}</div>
+</ng-template>

@@ -8,6 +8,7 @@ import { tap } from 'rxjs/operators';
 export class AuthService {
   constructor(private api: ApiService, private router: Router) {}
 
+  // Anropas av LoginComponent – sparar token själv
   login(username: string, password: string) {
     return this.api.login({ username, password }).pipe(
       tap(res => {
@@ -23,5 +24,9 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return !!localStorage.getItem('access_token');
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('access_token');
   }
 }
