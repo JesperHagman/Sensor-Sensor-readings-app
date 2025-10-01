@@ -1,7 +1,8 @@
+// src/app/features/sensor-detail/sensor-detail.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, ViewChild, ElementRef } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import Chart from 'chart.js/auto';
 
@@ -17,34 +18,46 @@ import { Sensor, Reading, Paginated } from '../../core/models';
 })
 export class SensorDetailComponent implements OnInit, OnDestroy {
   sensor?: Sensor;
+
+  // readings list
   pageData?: Paginated<Reading>;
   readings: Reading[] = [];
   loading = false;
   error?: string;
 
+  // pagination
   page = 1;
   pageSize = 100;
 
+  // chart
   private sub?: Subscription;
   private chart?: Chart;
-
   @ViewChild('lineChart') lineChartRef!: ElementRef<HTMLCanvasElement>;
 
   // date filter (datetime-local)
-  form = this.fb.group({
+  filterForm = this.fb.group({
     start: [''],
     end: [''],
   });
 
   // add reading
   addForm = this.fb.group({
-    temperature: [''],
-    humidity: [''],
-    timestamp: [''], // datetime-local
+    temperature: ['', Validators.required],
+    humidity: ['', Validators.required],
+    timestamp: ['', Validators.required], // datetime-local
+  });
+
+  // --- EDIT SENSOR (Update) ---
+  editing = false;
+  editForm = this.fb.group({
+    name: ['', Validators.required],
+    model: ['', Validators.required],
+    description: [''],
   });
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private api: ApiService,
     private fb: FormBuilder
   ) {}
@@ -56,7 +69,7 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
       return;
     }
     this.loadSensor(id);
-    this.fetch(id);
+    this.fetchReadings(id);
   }
 
   ngOnDestroy(): void {
@@ -64,31 +77,90 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
     this.destroyChart();
   }
 
+  // ---------- Sensor CRUD ----------
+
   private loadSensor(id: number) {
     this.api.getSensor(id).subscribe({
-      next: (s) => (this.sensor = s),
+      next: (s) => {
+        this.sensor = s;
+        // prefill edit form
+        this.editForm.patchValue({
+          name: s.name,
+          model: s.model,
+          description: s.description ?? '',
+        });
+      },
       error: () => (this.error = 'Failed to fetch sensor'),
     });
   }
 
+  startEdit() {
+    if (!this.sensor) return;
+    this.editing = true;
+    this.editForm.reset({
+      name: this.sensor.name,
+      model: this.sensor.model,
+      description: this.sensor.description ?? '',
+    });
+  }
+
+  cancelEdit() {
+    this.editing = false;
+  }
+
+  saveSensor() {
+    if (!this.sensor || this.editForm.invalid) return;
+    const body = {
+      name: this.editForm.value.name!,
+      model: this.editForm.value.model!,
+      description: (this.editForm.value.description ?? '') as string,
+    };
+    this.api.updateSensor(this.sensor.id, body).subscribe({
+      next: (updated) => {
+        this.sensor = updated;
+        this.editing = false;
+      },
+      error: (e) => {
+        this.error = e?.error?.detail || 'Failed to update sensor';
+        console.error(e);
+      },
+    });
+  }
+
+  deleteSensor() {
+    if (!this.sensor) return;
+    const ok = confirm(`Delete sensor "${this.sensor.name}"? This also deletes its readings.`);
+    if (!ok) return;
+
+    this.api.deleteSensor(this.sensor.id).subscribe({
+      next: () => this.router.navigate(['/sensors']),
+      error: (e) => {
+        this.error = e?.error?.detail || 'Failed to delete sensor';
+        console.error(e);
+      },
+    });
+  }
+
+  // ---------- Readings (list + filter + add) ----------
+
   private toIsoOrUndefined(v?: string | null): string | undefined {
     if (!v) return undefined;
     try {
-      // datetime-local => local time; convert to ISO UTC to be explicit
+      // datetime-local => local time; convert to ISO UTC
       return new Date(v).toISOString();
     } catch {
       return undefined;
     }
   }
 
-  fetch(id?: number) {
+  fetchReadings(id?: number) {
     const sensorId = id ?? Number(this.route.snapshot.paramMap.get('id'));
     if (!sensorId) return;
 
     this.loading = true;
     this.error = undefined;
 
-    const { start, end } = this.form.value;
+    const { start, end } = this.filterForm.value;
     const startIso = this.toIsoOrUndefined(start || null);
     const endIso = this.toIsoOrUndefined(end || null);
 
@@ -118,21 +190,21 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
 
   applyFilter() {
     this.page = 1;
-    this.fetch();
+    this.fetchReadings();
   }
 
   nextPage() {
     if (!this.pageData) return;
     if (this.page * this.pageSize < this.pageData.count) {
       this.page++;
-      this.fetch();
+      this.fetchReadings();
     }
   }
 
   prevPage() {
     if (this.page > 1) {
       this.page--;
-      this.fetch();
+      this.fetchReadings();
     }
   }
 
@@ -152,7 +224,7 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: () => {
         this.addForm.reset();
-        this.fetch(id); // reload current page
+        this.fetchReadings(id); // reload current page
       },
       error: (e) => {
         this.error = e?.error?.detail || 'Failed to create reading';
@@ -160,6 +232,8 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  // ---------- Chart ----------
 
   private destroyChart() {
     if (this.chart) {
@@ -205,6 +279,7 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Latest 20 from current page
   get latest20(): Reading[] {
     return this.readings.slice(-20).reverse();
   }

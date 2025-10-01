@@ -41,6 +41,14 @@ export class ApiService {
     return this.http.post<Sensor>('/api/sensors/', body);
   }
 
+  updateSensor(id: number, body: { name: string; model: string; description?: string | null }) {
+    return this.http.put<Sensor>(`/api/sensors/${id}/`, body);
+  }
+
+  deleteSensor(id: number) {
+    return this.http.delete<void>(`/api/sensors/${id}/`);
+  }
+
   // ---- Readings ----
   listReadings(
     sensorId: number,
