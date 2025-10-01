@@ -1,31 +1,33 @@
-# ---- Makefile (repo root) ----
-SHELL := /bin/bash
+# ---------- Project / Compose ----------
 PROJECT := sensorapp
+export COMPOSE_PROJECT_NAME := $(PROJECT)
+
+# If you use Docker Compose v2 (Docker Desktop), this is correct:
 DC := docker compose
+# If you still use v1, change to: DC := docker-compose
+
+# Service names from docker-compose.yml
 BACKEND := web
 FRONTEND := app
 DB := db
 
-export COMPOSE_PROJECT_NAME := $(PROJECT)
+.PHONY: up down build rebuild restart logs ps env \
+        migrate makemigrations seed test websh dbsh appsh
 
-.PHONY: up down restart build rebuild logs ps migrate makemigrations seed test shell websh appsh dbsh collectstatic fmt lint env
-
-# Build images (first time) and start all services in background
+# ---------- Orchestration ----------
 up: env
 	$(DC) up -d --build
-	@echo "✔ Stack is up. Backend: http://localhost:8000/api/docs  Frontend: http://localhost:3000/"
+	@echo "✔ Stack up: Backend http://localhost:8000/api/docs  Frontend http://localhost:3000/"
 
-# Stop and remove containers (keeps volumes)
 down:
 	$(DC) down
 
-# Recreate with rebuild
+build:
+	$(DC) build
+
 rebuild:
 	$(DC) build --no-cache
 	$(DC) up -d
-
-build:
-	$(DC) build
 
 restart:
 	$(DC) restart
@@ -36,7 +38,7 @@ logs:
 ps:
 	$(DC) ps
 
-# ---- Django helpers ----
+# ---------- Backend helpers ----------
 migrate:
 	$(DC) exec $(BACKEND) python manage.py migrate
 
@@ -47,7 +49,14 @@ seed:
 	$(DC) exec $(BACKEND) python manage.py seed_data
 
 test:
-	$(DC) exec $(BACKEND) pytest -q
+	@cid="$$( $(DC) ps -q $(BACKEND) )"; \
+	if [ -n "$$cid" ]; then \
+		echo "Running tests in running container: $(BACKEND) ($$cid)"; \
+		$(DC) exec -T $(BACKEND) pytest -q; \
+	else \
+		echo "web is not running; running tests in a one-off container..."; \
+		$(DC) run --rm $(BACKEND) pytest -q; \
+	fi
 
 websh:
 	$(DC) exec $(BACKEND) bash
@@ -55,17 +64,11 @@ websh:
 dbsh:
 	$(DC) exec $(DB) bash
 
-# ---- Frontend helper ----
+# ---------- Frontend helper ----------
 appsh:
 	$(DC) exec $(FRONTEND) sh
 
-fmt:
-	@echo "add your formatter commands here"
-
-lint:
-	@echo "add your linter commands here"
-
-# Ensure backend/.env exists when using Postgres
+# ---------- Ensure backend/.env exists ----------
 env:
 	@if [ ! -f backend/.env ]; then \
 	  echo "backend/.env missing — creating a template"; \
