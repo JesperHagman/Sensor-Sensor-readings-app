@@ -1,43 +1,58 @@
-<div class="wrap" *ngIf="!loading && !error; else loadingOrError">
-  <a routerLink="/sensors" class="back-link">← Till sensorer</a>
+<!-- src/app/features/sensor-detail/sensor-detail.component.html -->
+<section class="wrap">
+  <a routerLink="/sensors">← Tillbaka</a>
 
-  <h1 class="title">{{ sensor?.name }}</h1>
-  <div class="meta">
-    <div><strong>Model:</strong> {{ sensor?.model }}</div>
-    <div *ngIf="sensor?.description"><strong>Beskrivning:</strong> {{ sensor?.description }}</div>
+  <h1 *ngIf="sensor">
+    {{ sensor.name }} <small>({{ sensor.model }})</small>
+  </h1>
+
+  <!-- Filter -->
+  <form [formGroup]="form" (ngSubmit)="applyFilter()" class="filters">
+    <label>
+      Start:
+      <input type="datetime-local" formControlName="start" />
+    </label>
+    <label>
+      Slut:
+      <input type="datetime-local" formControlName="end" />
+    </label>
+    <button type="submit">Filtrera</button>
+  </form>
+
+  <div *ngIf="loading">Laddar…</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <!-- Graf -->
+  <div style="height: 320px; margin-top: 12px;">
+    <canvas #lineChart></canvas>
   </div>
 
-  <div class="card chart-card">
-    <h2>Temperatur & Luftfuktighet</h2>
-    <div class="chart-box">
-      <canvas #lineChart></canvas>
-    </div>
+  <!-- Paginering -->
+  <div class="pager" *ngIf="pageData">
+    <button (click)="prevPage()" [disabled]="page===1">Föregående</button>
+    <span>
+      Sida {{ page }} / {{ totalPages }}
+      — totalt {{ pageData.count }} rader
+    </span>
+    <button (click)="nextPage()" [disabled]="page*pageSize >= pageData.count">Nästa</button>
   </div>
 
-  <div class="card">
-    <h2>Senaste mätningar (20)</h2>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr>
-            <th>Tid</th>
-            <th>Temp (°C)</th>
-            <th>RH (%)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let r of latest20">
-            <td>{{ r.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
-            <td>{{ r.temperature | number:'1.2-2' }}</td>
-            <td>{{ r.humidity | number:'1.2-2' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<ng-template #loadingOrError>
-  <div class="state" *ngIf="loading">Laddar…</div>
-  <div class="state error" *ngIf="!loading && error">{{ error }}</div>
-</ng-template>
+  <!-- Tabell: senaste 20 från sidan -->
+  <h2 style="margin-top: 16px;">Senaste 20 på sidan</h2>
+  <table *ngIf="latest20.length">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Temp (°C)</th>
+        <th>Humidity (%)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let r of latest20">
+        <td>{{ r.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+        <td>{{ r.temperature }}</td>
+        <td>{{ r.humidity }}</td>
+      </tr>
+    </tbody>
+  </table>
+</section>

@@ -2,7 +2,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ApiService, Sensor } from '../../core/api.service';
+import { ApiService } from '../../core/api.service';
+import { Sensor } from '../../core/models';
 
 @Component({
   selector: 'app-sensors-list',

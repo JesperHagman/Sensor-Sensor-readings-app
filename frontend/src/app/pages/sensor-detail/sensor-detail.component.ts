@@ -1,87 +1,128 @@
+// src/app/features/sensor-detail/sensor-detail.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Subscription, forkJoin } from 'rxjs';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import Chart from 'chart.js/auto';
 
-interface Sensor {
-  id: number;
-  name: string;
-  model: string;
-  description?: string | null;
-}
-
-interface Reading {
-  id: number;
-  temperature: number;
-  humidity: number;
-  timestamp: string; // ISO
-}
-
-interface Page<T> {
-  items: T[];
-  count: number;
-  page: number;
-  page_size: number;
-}
+import { ApiService } from '../../core/api.service';
+import { Sensor, Reading, Paginated } from '../../core/models';
 
 @Component({
   selector: 'app-sensor-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule],
   templateUrl: './sensor-detail.component.html',
   styleUrls: ['./sensor-detail.component.scss'],
 })
 export class SensorDetailComponent implements OnInit, OnDestroy {
   sensor?: Sensor;
-  readings: Reading[] = [];
-  loading = true;
+  pageData?: Paginated<Reading>;
+  readings: Reading[] = [];         // aktuellt sidresultat
+  loading = false;
   error?: string;
+
+  page = 1;
+  pageSize = 100;                   // justerbart
 
   private sub?: Subscription;
   private chart?: Chart;
 
   @ViewChild('lineChart') lineChartRef!: ElementRef<HTMLCanvasElement>;
 
-  constructor(private route: ActivatedRoute, private http: HttpClient) {}
+  // Form för datumfilter (datetime-local)
+  form = this.fb.group({
+    start: [''],
+    end: [''],
+  });
+
+  constructor(
+    private route: ActivatedRoute,
+    private api: ApiService,
+    private fb: FormBuilder
+  ) {}
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!id) {
       this.error = 'Ogiltigt sensor-id i URL:en.';
-      this.loading = false;
       return;
     }
-
-    // hämta sensor + läsningar samtidigt (utan paginering först)
-    const sensor$ = this.http.get<Sensor>(`/api/sensors/${id}/`);
-    const readings$ = this.http.get<Page<Reading>>(
-      `/api/sensors/${id}/readings/`,
-      { params: new HttpParams().set('page_size', 200) } // ta t.ex. 200 mätpunkter
-    );
-
-    this.sub = forkJoin({ sensor: sensor$, readings: readings$ }).subscribe({
-      next: ({ sensor, readings }) => {
-        this.sensor = sensor;
-        // sortera stigande tid för snyggare linje
-        this.readings = [...readings.items].sort(
-          (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-        );
-        this.loading = false;
-        setTimeout(() => this.renderChart(), 0);
-      },
-      error: (err) => {
-        this.error = err?.error?.detail || 'Kunde inte hämta data.';
-        this.loading = false;
-      },
-    });
+    this.loadSensor(id);
+    this.fetch(id);
   }
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
     this.destroyChart();
   }
+
+  private loadSensor(id: number) {
+    this.api.getSensor(id).subscribe({
+      next: (s) => (this.sensor = s),
+      error: () => (this.error = 'Kunde inte hämta sensor'),
+    });
+  }
+
+  fetch(id?: number) {
+    const sensorId = id ?? Number(this.route.snapshot.paramMap.get('id'));
+    if (!sensorId) return;
+
+    this.loading = true;
+    this.error = undefined;
+
+    const { start, end } = this.form.value;
+
+    this.sub?.unsubscribe();
+    this.sub = this.api
+      .listReadings(sensorId, {
+        page: this.page,
+        page_size: this.pageSize,
+        start: start || undefined,
+        end: end || undefined,
+      })
+      .subscribe({
+        next: (res) => {
+          this.pageData = res;
+          // sortera stigande på sidan för snygg linje
+          this.readings = [...res.items].sort(
+            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+          this.loading = false;
+          setTimeout(() => this.renderChart(), 0);
+        },
+        error: (err) => {
+          this.loading = false;
+          this.error = err?.error?.detail || 'Kunde inte hämta avläsningar';
+        },
+      });
+  }
+
+  applyFilter() {
+    this.page = 1; // börja om vid filter
+    this.fetch();
+  }
+
+  nextPage() {
+    if (!this.pageData) return;
+    if (this.page * this.pageSize < this.pageData.count) {
+      this.page++;
+      this.fetch();
+    }
+  }
+
+  prevPage() {
+    if (this.page > 1) {
+      this.page--;
+      this.fetch();
+    }
+  }
+
+  get totalPages(): number {
+  return this.pageData ? Math.ceil(this.pageData.count / this.pageSize) : 0;
+}
+
 
   private destroyChart() {
     if (this.chart) {
@@ -91,13 +132,13 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
   }
 
   private renderChart() {
-    if (!this.lineChartRef || !this.readings.length) return;
+    if (!this.lineChartRef || !this.readings.length) {
+      this.destroyChart();
+      return;
+    }
     this.destroyChart();
 
-    const labels = this.readings.map(r =>
-      new Date(r.timestamp).toLocaleString()
-    );
-
+    const labels = this.readings.map(r => new Date(r.timestamp).toLocaleString());
     const temp = this.readings.map(r => r.temperature);
     const hum = this.readings.map(r => r.humidity);
 
@@ -106,20 +147,8 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
       data: {
         labels,
         datasets: [
-          {
-            label: 'Temperature (°C)',
-            data: temp,
-            yAxisID: 'y1',
-            pointRadius: 0,
-            tension: 0.2,
-          },
-          {
-            label: 'Humidity (%)',
-            data: hum,
-            yAxisID: 'y2',
-            pointRadius: 0,
-            tension: 0.2,
-          },
+          { label: 'Temperature (°C)', data: temp, yAxisID: 'y1', pointRadius: 0, tension: 0.2 },
+          { label: 'Humidity (%)', data: hum, yAxisID: 'y2', pointRadius: 0, tension: 0.2 },
         ],
       },
       options: {
@@ -127,18 +156,9 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         scales: {
-          y1: {
-            type: 'linear',
-            position: 'left',
-          },
-          y2: {
-            type: 'linear',
-            position: 'right',
-            grid: { drawOnChartArea: false },
-          },
-          x: {
-            ticks: { autoSkip: true, maxTicksLimit: 8 },
-          },
+          y1: { type: 'linear', position: 'left' },
+          y2: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } },
+          x: { ticks: { autoSkip: true, maxTicksLimit: 8 } },
         },
         plugins: {
           legend: { display: true },
@@ -148,7 +168,7 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Visa de senaste 20 raderna i tabellen under grafen
+  // Visa de senaste 20 (från just denna sida)
   get latest20(): Reading[] {
     return this.readings.slice(-20).reverse();
   }

@@ -15,5 +15,4 @@ export class AuthGuard {
   }
 }
 
-// för Routes-arrayen ovan kan du använda klassen direkt (Angular 17 stödjer detta)
 export const canActivate: CanActivateFn = () => inject(AuthGuard).canActivate();

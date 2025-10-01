@@ -1,3 +1,4 @@
+// src/app/core/models.ts
 export interface Paginated<T> {
   items: T[];
   count: number;
@@ -9,7 +10,7 @@ export interface Sensor {
   id: number;
   name: string;
   model: string;
-  description: string | null;
+  description?: string | null; // <- optional för att matcha API:t
 }
 
 export interface Reading {
@@ -19,23 +20,12 @@ export interface Reading {
   timestamp: string; // ISO
 }
 
-export interface RegisterIn {
-  username: string;
-  email: string;
-  password: string;
-}
-
-export interface UserOut {
-  id: number;
-  username: string;
-  email: string;
-}
-
 export interface LoginIn {
   username: string;
   password: string;
 }
 
-export interface TokenOut {
-  access: string; // justera efter din backend
+export interface JwtPair {
+  access: string;
+  refresh: string;
 }
