@@ -55,6 +55,7 @@ export class SensorsListComponent implements OnInit {
   }
 
   applySearch(): void {
+    this.q = (this.q || '').trim();
     this.page = 1;
     this.load();
   }

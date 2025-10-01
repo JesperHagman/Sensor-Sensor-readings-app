@@ -2,16 +2,16 @@
   <div class="card">
     <div class="card-header">
       <h1>Sensors</h1>
-      <span class="muted">Översikt & filtrering</span>
+      <span class="muted">Overview & filtering</span>
     </div>
 
     <!-- Filter/search toolbar -->
     <form (ngSubmit)="applySearch()" class="toolbar">
-      <input [(ngModel)]="q" name="q" class="input" placeholder="Sök namn eller modell" />
-      <button type="submit" class="btn btn-outline">Sök</button>
+      <input [(ngModel)]="q" name="q" class="input" placeholder="Search by name or model" />
+      <button type="submit" class="btn btn-outline">Search</button>
     </form>
 
-    <div class="state" *ngIf="loading">Laddar…</div>
+    <div class="state" *ngIf="loading">Loading…</div>
     <div class="error" *ngIf="error">{{ error }}</div>
 
     <ul class="stack-s" *ngIf="!loading && !error">
@@ -24,22 +24,22 @@
     </ul>
 
     <div class="pager" *ngIf="!loading && totalCount > pageSize">
-      <button class="btn btn-ghost" (click)="prevPage()" [disabled]="page===1">Föregående</button>
-      <span class="muted">Sida {{ page }} / {{ totalPages }} — totalt {{ totalCount }} sensorer</span>
-      <button class="btn btn-ghost" (click)="nextPage()" [disabled]="page*pageSize >= totalCount">Nästa</button>
+      <button class="btn btn-ghost" (click)="prevPage()" [disabled]="page===1 || totalCount===0">Previous</button>
+      <span class="muted">Page {{ page }} / {{ totalPages }} — total {{ totalCount }} sensors</span>
+      <button class="btn btn-ghost" (click)="nextPage()" [disabled]="page*pageSize >= totalCount || totalCount===0">Next</button>
     </div>
   </div>
 
   <!-- Create sensor -->
   <div class="card">
     <div class="card-header">
-      <h2>Lägg till sensor</h2>
+      <h2>Add sensor</h2>
     </div>
     <form [formGroup]="addForm" (ngSubmit)="add()" class="stack-s" style="max-width: 520px;">
       <input class="input" formControlName="name" placeholder="Name" />
       <input class="input" formControlName="model" placeholder="Model" />
       <input class="input" formControlName="description" placeholder="Description (optional)" />
-      <button type="submit" class="btn">Skapa</button>
+      <button type="submit" class="btn">Create</button>
     </form>
   </div>
 </section>

@@ -1,24 +1,26 @@
 <section class="container section" style="max-width: 460px;">
   <div class="card stack-m">
     <div class="card-header">
-      <h1>Logga in</h1>
+      <h1>Login</h1>
     </div>
 
     <form [formGroup]="form" (ngSubmit)="submit()" class="stack-s">
       <div class="field">
-        <label>Användarnamn</label>
+        <label>Username</label>
         <input type="text" class="input" formControlName="username" />
       </div>
 
       <div class="field">
-        <label>Lösenord</label>
+        <label>Password</label>
         <input type="password" class="input" formControlName="password" />
       </div>
 
-      <button type="submit" class="btn" [disabled]="loading">Logga in</button>
+      <button type="submit" class="btn" [disabled]="loading">Login</button>
       <p class="error" *ngIf="error">{{ error }}</p>
-
     </form>
-    <p class="muted">Har du inget konto? <a routerLink="/register">Skapa ett konto</a></p>
+
+    <p class="muted">
+      Don’t have an account? <a routerLink="/register">Create one</a>
+    </p>
   </div>
 </section>

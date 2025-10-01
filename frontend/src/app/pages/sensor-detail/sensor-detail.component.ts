@@ -1,4 +1,3 @@
-// src/app/features/sensor-detail/sensor-detail.component.ts
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -31,13 +30,13 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
 
   @ViewChild('lineChart') lineChartRef!: ElementRef<HTMLCanvasElement>;
 
-  // datumfilter (datetime-local)
+  // date filter (datetime-local)
   form = this.fb.group({
     start: [''],
     end: [''],
   });
 
-  // lägg till reading
+  // add reading
   addForm = this.fb.group({
     temperature: [''],
     humidity: [''],
@@ -53,7 +52,7 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!id) {
-      this.error = 'Ogiltigt sensor-id i URL:en.';
+      this.error = 'Invalid sensor id in URL.';
       return;
     }
     this.loadSensor(id);
@@ -68,8 +67,18 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
   private loadSensor(id: number) {
     this.api.getSensor(id).subscribe({
       next: (s) => (this.sensor = s),
-      error: () => (this.error = 'Kunde inte hämta sensor'),
+      error: () => (this.error = 'Failed to fetch sensor'),
     });
+  }
+
+  private toIsoOrUndefined(v?: string | null): string | undefined {
+    if (!v) return undefined;
+    try {
+      // datetime-local => local time; convert to ISO UTC to be explicit
+      return new Date(v).toISOString();
+    } catch {
+      return undefined;
+    }
   }
 
   fetch(id?: number) {
@@ -80,14 +89,16 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
     this.error = undefined;
 
     const { start, end } = this.form.value;
+    const startIso = this.toIsoOrUndefined(start || null);
+    const endIso = this.toIsoOrUndefined(end || null);
 
     this.sub?.unsubscribe();
     this.sub = this.api
       .listReadings(sensorId, {
         page: this.page,
         page_size: this.pageSize,
-        start: start || undefined,
-        end: end || undefined,
+        start: startIso,
+        end: endIso,
       })
       .subscribe({
         next: (res) => {
@@ -100,7 +111,7 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           this.loading = false;
-          this.error = err?.error?.detail || 'Kunde inte hämta avläsningar';
+          this.error = err?.error?.detail || 'Failed to fetch readings';
         },
       });
   }
@@ -133,6 +144,7 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     const v = this.addForm.value;
     const iso = v.timestamp ? new Date(v.timestamp as string).toISOString() : '';
+
     this.api.createReading(id, {
       temperature: Number(v.temperature),
       humidity: Number(v.humidity),
@@ -140,11 +152,10 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: () => {
         this.addForm.reset();
-        // Ladda om aktuell sida
-        this.fetch(id);
+        this.fetch(id); // reload current page
       },
       error: (e) => {
-        this.error = e?.error?.detail || 'Kunde inte skapa avläsning';
+        this.error = e?.error?.detail || 'Failed to create reading';
         console.error(e);
       }
     });
@@ -194,7 +205,6 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Visa de senaste 20 (från just denna sida)
   get latest20(): Reading[] {
     return this.readings.slice(-20).reverse();
   }
