@@ -1,6 +1,11 @@
+// src/main.ts (or in AppComponent constructor)
 import { bootstrapApplication } from '@angular/platform-browser';
-import { appConfig } from './app/app.config';
 import { AppComponent } from './app/app.component';
+import { appConfig } from './app/app.config';
+import { IdleService } from './app/core/idle.service';
 
-bootstrapApplication(AppComponent, appConfig)
-  .catch((err) => console.error(err));
+bootstrapApplication(AppComponent, appConfig).then((ref) => {
+  const injector = ref.injector;
+  const idle = injector.get(IdleService);
+  idle.start();
+});
