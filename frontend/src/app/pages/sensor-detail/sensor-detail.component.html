@@ -7,7 +7,7 @@
   </h1>
 
   <!-- Filter -->
-  <form [formGroup]="form" (ngSubmit)="applyFilter()" class="filters">
+  <form [formGroup]="form" (ngSubmit)="applyFilter()" class="filters" style="display:flex; gap:8px; align-items:center;">
     <label>
       Start:
       <input type="datetime-local" formControlName="start" />
@@ -28,7 +28,7 @@
   </div>
 
   <!-- Paginering -->
-  <div class="pager" *ngIf="pageData">
+  <div class="pager" *ngIf="pageData" style="margin-top:12px; display:flex; gap:8px; align-items:center;">
     <button (click)="prevPage()" [disabled]="page===1">Föregående</button>
     <span>
       Sida {{ page }} / {{ totalPages }}
@@ -37,7 +37,7 @@
     <button (click)="nextPage()" [disabled]="page*pageSize >= pageData.count">Nästa</button>
   </div>
 
-  <!-- Tabell: senaste 20 från sidan -->
+  <!-- Tabell: senaste 20 på sidan -->
   <h2 style="margin-top: 16px;">Senaste 20 på sidan</h2>
   <table *ngIf="latest20.length">
     <thead>
@@ -55,4 +55,15 @@
       </tr>
     </tbody>
   </table>
+
+  <hr style="margin:16px 0;" />
+
+  <!-- Lägg till avläsning -->
+  <h2>Lägg till avläsning</h2>
+  <form [formGroup]="addForm" (ngSubmit)="addReading()" style="display:grid; gap:8px; max-width:420px;">
+    <input type="number" step="0.01" formControlName="temperature" placeholder="Temperature °C" />
+    <input type="number" step="0.01" formControlName="humidity" placeholder="Humidity %" />
+    <input type="datetime-local" formControlName="timestamp" />
+    <button type="submit">Lägg till</button>
+  </form>
 </section>

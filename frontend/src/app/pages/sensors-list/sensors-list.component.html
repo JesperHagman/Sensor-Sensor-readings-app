@@ -2,6 +2,11 @@
 <div class="page">
   <h1>Sensors</h1>
 
+  <form (ngSubmit)="applySearch()" style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+    <input [(ngModel)]="q" name="q" placeholder="Sök namn eller modell" />
+    <button type="submit">Sök</button>
+  </form>
+
   <div *ngIf="loading">Laddar…</div>
   <div *ngIf="error" class="error">{{ error }}</div>
 
@@ -9,7 +14,26 @@
     <li *ngFor="let s of sensors">
       <a [routerLink]="['/sensors', s.id]">
         <strong>{{ s.name }}</strong> — {{ s.model }}
+        <span *ngIf="s.description"> · {{ s.description }}</span>
       </a>
     </li>
   </ul>
+
+  <!-- Paginering -->
+  <div class="pager" *ngIf="!loading && totalCount > pageSize" style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+    <button (click)="prevPage()" [disabled]="page===1">Föregående</button>
+    <span>Sida {{ page }} / {{ totalPages }} — totalt {{ totalCount }} sensorer</span>
+    <button (click)="nextPage()" [disabled]="page*pageSize >= totalCount">Nästa</button>
+  </div>
+
+  <hr style="margin:16px 0;" />
+
+  <!-- Lägg till sensor -->
+  <h2>Lägg till sensor</h2>
+  <form [formGroup]="addForm" (ngSubmit)="add()" style="display:grid; gap:8px; max-width:420px;">
+    <input formControlName="name" placeholder="Name" />
+    <input formControlName="model" placeholder="Model" />
+    <input formControlName="description" placeholder="Description (optional)" />
+    <button type="submit">Skapa</button>
+  </form>
 </div>

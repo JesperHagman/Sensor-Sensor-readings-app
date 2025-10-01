@@ -19,22 +19,29 @@ import { Sensor, Reading, Paginated } from '../../core/models';
 export class SensorDetailComponent implements OnInit, OnDestroy {
   sensor?: Sensor;
   pageData?: Paginated<Reading>;
-  readings: Reading[] = [];         // aktuellt sidresultat
+  readings: Reading[] = [];
   loading = false;
   error?: string;
 
   page = 1;
-  pageSize = 100;                   // justerbart
+  pageSize = 100;
 
   private sub?: Subscription;
   private chart?: Chart;
 
   @ViewChild('lineChart') lineChartRef!: ElementRef<HTMLCanvasElement>;
 
-  // Form för datumfilter (datetime-local)
+  // datumfilter (datetime-local)
   form = this.fb.group({
     start: [''],
     end: [''],
+  });
+
+  // lägg till reading
+  addForm = this.fb.group({
+    temperature: [''],
+    humidity: [''],
+    timestamp: [''], // datetime-local
   });
 
   constructor(
@@ -85,7 +92,6 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.pageData = res;
-          // sortera stigande på sidan för snygg linje
           this.readings = [...res.items].sort(
             (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
           );
@@ -100,7 +106,7 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
   }
 
   applyFilter() {
-    this.page = 1; // börja om vid filter
+    this.page = 1;
     this.fetch();
   }
 
@@ -120,9 +126,29 @@ export class SensorDetailComponent implements OnInit, OnDestroy {
   }
 
   get totalPages(): number {
-  return this.pageData ? Math.ceil(this.pageData.count / this.pageSize) : 0;
-}
+    return this.pageData ? Math.ceil(this.pageData.count / this.pageSize) : 0;
+  }
 
+  addReading() {
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    const v = this.addForm.value;
+    const iso = v.timestamp ? new Date(v.timestamp as string).toISOString() : '';
+    this.api.createReading(id, {
+      temperature: Number(v.temperature),
+      humidity: Number(v.humidity),
+      timestamp: iso,
+    }).subscribe({
+      next: () => {
+        this.addForm.reset();
+        // Ladda om aktuell sida
+        this.fetch(id);
+      },
+      error: (e) => {
+        this.error = e?.error?.detail || 'Kunde inte skapa avläsning';
+        console.error(e);
+      }
+    });
+  }
 
   private destroyChart() {
     if (this.chart) {
