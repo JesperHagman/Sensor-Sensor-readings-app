@@ -45,7 +45,7 @@ The app runs fully in **Docker** and includes tests, API docs, and seeded demo d
 
 Clone this repo:
 
-    git clone <your-repo-url>
+    git clone https://github.com/JesperHagman/Sensor-Sensor-readings-app.git
     cd sensor-sensor-readings-app
 
 ### Start the stack (with `make`)
@@ -80,10 +80,60 @@ If you don’t have `make` available (Windows without Git Bash/WSL2):
     # seed demo data (optional)
     docker compose exec web python manage.py seed_data
 
+## Running Locally (without Docker)
+
+If you prefer to run the project directly on your machine instead of Docker:
+
+1. **Backend (Django with SQLite)**
+   - Create a virtual environment and install dependencies:  
+     ```bash
+     cd backend
+     # On Mac/Linux you may need to use "python3" instead of "python"
+     python -m venv venv
+     source venv/bin/activate   # On Windows: venv\Scripts\activate
+     pip install -r requirements.txt
+     ```
+   - For local development we use **SQLite**, so no extra database setup is required.  
+     Your `settings.py` should already point to something like:
+     ```python
+     DATABASES = {
+         "default": {
+             "ENGINE": "django.db.backends.sqlite3",
+             "NAME": BASE_DIR / "db.sqlite3",
+         }
+     }
+     ```
+   - Run database migrations:  
+     ```bash
+     # Use python or python3 depending on your OS
+     python manage.py migrate
+     ```
+   - (Optional) Load seed data:  
+     ```bash
+     python manage.py seed_data
+     ```
+   - Start the backend server:  
+     ```bash
+     python manage.py runserver
+     ```
+   - Backend will be available at: [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
+
+2. **Frontend (Angular)**
+   - Install dependencies:  
+     ```bash
+     cd frontend
+     npm install
+     ```
+   - Start the Angular development server:  
+     ```bash
+     npm start
+     ```
+   - Frontend will be available at: [http://localhost:4200](http://localhost:4200) (proxies API calls to backend)
+
 ### Demo User (after seeding)
 
 - **Username**: demo  
-- **Password**: demo123
+- **Password**: demo1234
 
 ### URLs
 
