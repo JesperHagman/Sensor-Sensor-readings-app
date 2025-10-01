@@ -1,69 +1,87 @@
-<!-- src/app/features/sensor-detail/sensor-detail.component.html -->
-<section class="wrap">
-  <a routerLink="/sensors">← Tillbaka</a>
+<section class="section stack-l">
+  <a routerLink="/sensors" class="muted">← Tillbaka</a>
 
-  <h1 *ngIf="sensor">
-    {{ sensor.name }} <small>({{ sensor.model }})</small>
-  </h1>
+  <div class="card stack-m">
+    <div class="card-header">
+      <h1 *ngIf="sensor">
+        {{ sensor.name }} <small class="muted">({{ sensor.model }})</small>
+      </h1>
+      <span class="chip" *ngIf="sensor?.description">{{ sensor?.description }}</span>
+    </div>
 
-  <!-- Filter -->
-  <form [formGroup]="form" (ngSubmit)="applyFilter()" class="filters" style="display:flex; gap:8px; align-items:center;">
-    <label>
-      Start:
-      <input type="datetime-local" formControlName="start" />
-    </label>
-    <label>
-      Slut:
-      <input type="datetime-local" formControlName="end" />
-    </label>
-    <button type="submit">Filtrera</button>
-  </form>
+    <!-- Filters -->
+    <form [formGroup]="form" (ngSubmit)="applyFilter()" class="toolbar">
+      <div class="field">
+        <label>Start</label>
+        <input type="datetime-local" class="input" formControlName="start" />
+      </div>
 
-  <div *ngIf="loading">Laddar…</div>
-  <div *ngIf="error" class="error">{{ error }}</div>
+      <div class="field">
+        <label>Slut</label>
+        <input type="datetime-local" class="input" formControlName="end" />
+      </div>
 
-  <!-- Graf -->
-  <div style="height: 320px; margin-top: 12px;">
-    <canvas #lineChart></canvas>
+      <button type="submit" class="btn btn-outline">Filtrera</button>
+    </form>
+
+    <div class="state" *ngIf="loading">Laddar…</div>
+    <div class="error" *ngIf="error">{{ error }}</div>
+
+    <!-- Chart -->
+    <div class="card" style="padding: 0;">
+      <div style="height: 360px; padding: var(--sp-5);">
+        <canvas #lineChart></canvas>
+      </div>
+    </div>
+
+    <!-- Pager -->
+    <div class="pager" *ngIf="pageData">
+      <button class="btn btn-ghost" (click)="prevPage()" [disabled]="page===1">Föregående</button>
+      <span class="muted">
+        Sida {{ page }} / {{ totalPages }} — totalt {{ pageData.count }} rader
+      </span>
+      <button class="btn btn-ghost" (click)="nextPage()" [disabled]="page*pageSize >= pageData.count">Nästa</button>
+    </div>
+
+    <!-- Latest 20 (from current page) -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Senaste 20 på sidan</h2>
+      </div>
+
+      <div class="table-wrap" *ngIf="latest20.length">
+        <table>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Temp (°C)</th>
+              <th>Humidity (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of latest20">
+              <td>{{ r.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+              <td>{{ r.temperature }}</td>
+              <td>{{ r.humidity }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <hr class="light" />
+
+    <!-- Add reading -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Lägg till avläsning</h2>
+      </div>
+      <form [formGroup]="addForm" (ngSubmit)="addReading()" class="stack-s" style="max-width: 520px;">
+        <input type="number" step="0.01" class="input" formControlName="temperature" placeholder="Temperature °C" />
+        <input type="number" step="0.01" class="input" formControlName="humidity" placeholder="Humidity %" />
+        <input type="datetime-local" class="input" formControlName="timestamp" />
+        <button type="submit" class="btn">Lägg till</button>
+      </form>
+    </div>
   </div>
-
-  <!-- Paginering -->
-  <div class="pager" *ngIf="pageData" style="margin-top:12px; display:flex; gap:8px; align-items:center;">
-    <button (click)="prevPage()" [disabled]="page===1">Föregående</button>
-    <span>
-      Sida {{ page }} / {{ totalPages }}
-      — totalt {{ pageData.count }} rader
-    </span>
-    <button (click)="nextPage()" [disabled]="page*pageSize >= pageData.count">Nästa</button>
-  </div>
-
-  <!-- Tabell: senaste 20 på sidan -->
-  <h2 style="margin-top: 16px;">Senaste 20 på sidan</h2>
-  <table *ngIf="latest20.length">
-    <thead>
-      <tr>
-        <th>Timestamp</th>
-        <th>Temp (°C)</th>
-        <th>Humidity (%)</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let r of latest20">
-        <td>{{ r.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
-        <td>{{ r.temperature }}</td>
-        <td>{{ r.humidity }}</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <hr style="margin:16px 0;" />
-
-  <!-- Lägg till avläsning -->
-  <h2>Lägg till avläsning</h2>
-  <form [formGroup]="addForm" (ngSubmit)="addReading()" style="display:grid; gap:8px; max-width:420px;">
-    <input type="number" step="0.01" formControlName="temperature" placeholder="Temperature °C" />
-    <input type="number" step="0.01" formControlName="humidity" placeholder="Humidity %" />
-    <input type="datetime-local" formControlName="timestamp" />
-    <button type="submit">Lägg till</button>
-  </form>
 </section>

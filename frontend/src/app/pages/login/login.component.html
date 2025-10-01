@@ -1,20 +1,24 @@
-<!-- src/app/pages/login/login.component.html -->
-<div class="login">
-  <h1>Logga in</h1>
+<section class="container section" style="max-width: 460px;">
+  <div class="card stack-m">
+    <div class="card-header">
+      <h1>Logga in</h1>
+    </div>
 
-  <form [formGroup]="form" (ngSubmit)="submit()">
-    <label>
-      Användarnamn
-      <input type="text" formControlName="username" />
-    </label>
+    <form [formGroup]="form" (ngSubmit)="submit()" class="stack-s">
+      <div class="field">
+        <label>Användarnamn</label>
+        <input type="text" class="input" formControlName="username" />
+      </div>
 
-    <label>
-      Lösenord
-      <input type="password" formControlName="password" />
-    </label>
+      <div class="field">
+        <label>Lösenord</label>
+        <input type="password" class="input" formControlName="password" />
+      </div>
 
-    <button type="submit" [disabled]="loading">Logga in</button>
+      <button type="submit" class="btn" [disabled]="loading">Logga in</button>
+      <p class="error" *ngIf="error">{{ error }}</p>
 
-    <p class="error" *ngIf="error">{{ error }}</p>
-  </form>
-</div>
+    </form>
+    <p class="muted">Har du inget konto? <a routerLink="/register">Skapa ett konto</a></p>
+  </div>
+</section>

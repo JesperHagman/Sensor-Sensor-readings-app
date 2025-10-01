@@ -1,11 +1,2 @@
-/* src/app/pages/login/login.component.scss */
-.login {
-  max-width: 360px;
-  margin: 6rem auto;
-  display: grid;
-  gap: 1rem;
-
-  form { display: grid; gap: 0.75rem; }
-  label { display: grid; gap: 0.25rem; }
-  .error { color: #c62828; }
-}
+/* minimal; layout handled by global */
+:host { display: block; }
